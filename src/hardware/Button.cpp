@@ -1,5 +1,5 @@
 #include "Button.h"
-#include
+#include <Arduino.h>
 
 // Internal Button Specific tuning (private to this file)
 static constexpr unsigned long LONG_PRESS_MS = 600;
@@ -10,26 +10,27 @@ bool lastButtonState = HIGH;
 
 Button::Button(uint8_t pin)
     : ping(ping),
-      buttonState()
-
-          unsigned long pressedTime = 0;
-unsigned long lastDebounceTime = 0;
-
-bool isPressing = false;
-bool longPressFired = false;
-
-void setup()
+      buttonState(HIGH),
+      lastButtonState(false),
+      pressedTime(0),
+      lastDebounceTime(0),
+      isPressing(false),
+      longPressFired(false)
 {
-    Serial.begin(115200);
-    pinMode(BUTTON_PIN, INPUT_PULLUP);
-    Serial.println("BUTTON test Started!");
+
 }
 
-void loop()
+void Button::begin()
 {
-    bool reading = digitalRead(BUTTON_PIN);
+    pinMode(pin, INPUT_PULLUP);
+}
 
-    // Debounce (edge-agnostic)
+ButtonEvent Button::update(){
+    ButtonEvent event = ButtonEvent::NONE;
+
+    bool reading = digitalRead(pin);
+
+    // Debounce (eboth edges)
     if (reading != lastButtonState)
     {
         lastDebounceTime = millis();
@@ -54,7 +55,8 @@ void loop()
         if (millis() - pressedTime >= LONG_PRESS_THRESHOLD)
         {
             longPressFired = true;
-            Serial.println("Long Press!");
+           // Serial.println("Long Press!");
+            return ButtonEvent::LONG_PRESS;
         }
     }
 
@@ -63,7 +65,8 @@ void loop()
     {
         if (isPressing && !longPressFired)
         {
-            Serial.println("Short Press!");
+            //Serial.println("Short Press!");
+            return ButtonEvent::SHORT_PRESS;
         }
 
         isPressing = false;
