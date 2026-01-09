@@ -1,15 +1,27 @@
-#include "PingPalApp.h"
+#include "hardware/Button.h"
 #include <stdio.h>
 
-PingPalApp::PingPalApp() : setupConfirmationPending(false) {}
+PingPalApp::PingPalApp()
+    : button(5),// BUTTON_PIN {}
+      setupConfirmationPending(false)
+{
+}
 
 void PingPalApp::setup()
 {
+    button.begin();
     printf("\n PingPal Starting...");
 }
 
 void PingPalApp::loop()
-{
+{   
+    ButtonEvent e = button.update();
+    if(e == ButtonEvent::SHORT_PRESS){
+        onButtonShortPress();
+    }
+    if(e == ButtonEvent::LONG_PRESS){
+        onButtonLongPress();
+    }
     stateMachine.update();
 }
 

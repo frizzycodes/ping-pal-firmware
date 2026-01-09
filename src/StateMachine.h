@@ -1,5 +1,5 @@
 #pragma once
-#include "include/PingPalTypes.h"
+#include "PingPalTypes.h"
 
 class StateMachine
 {

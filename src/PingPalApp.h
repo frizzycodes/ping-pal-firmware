@@ -1,10 +1,12 @@
 #pragma once
 #include "StateMachine.h"
+#include "PingPalApp.h"
 
 class PingPalApp
 {
 private:
     StateMachine stateMachine;
+    Button button;
     bool setupConfirmationPending;
 
 public:
