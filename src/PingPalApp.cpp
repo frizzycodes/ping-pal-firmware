@@ -13,7 +13,9 @@ void PingPalApp::setup()
 {
     button.begin();
     led.begin();
-    updateLedForState(stateMachine.getCurrentState());
+
+    onStateEntered(stateMachine.getCurrentState());
+
     printf("\n PingPal Starting...");
 }
 
@@ -31,8 +33,7 @@ void PingPalApp::loop()
     stateMachine.update();
 }
 
-// Simulated events
-
+// Button events
 void PingPalApp::onButtonLongPress()
 {
     State s = stateMachine.getCurrentState();
@@ -44,7 +45,7 @@ void PingPalApp::onButtonLongPress()
     {
         setupConfirmationPending = false;
         stateMachine.transitionTo(State::SETUP_MODE);
-        updateLedForState(stateMachine.getCurrentState());
+        onStateEntered(stateMachine.getCurrentState());
         return;
     }
     setupConfirmationPending = true;
@@ -58,20 +59,25 @@ void PingPalApp::onButtonShortPress()
         return;
     }
 }
+
+// Wi-Fi events
 void PingPalApp::onWiFiConnected() {}
-void PingPalApp::onWiFiDisconnected()
-{
-}
+void PingPalApp::onWiFiDisconnected() {}
+
+// Ping events
 void PingPalApp::onPingSuccess()
 {
     stateMachine.transitionTo(State::ONLINE_PING_OK);
-    updateLedForState(stateMachine.getCurrentState());
+    onStateEntered(stateMachine.getCurrentState());
 }
 void PingPalApp::onPingFail()
 {
     stateMachine.transitionTo(State::ONLINE_PING_FAIL);
-    updateLedForState(stateMachine.getCurrentState());
+    onStateEntered(stateMachine.getCurrentState());
 }
+
+// Actions (initiated by app)
+
 void PingPalApp::updateLedForState(State state)
 {
     switch (state)
@@ -96,7 +102,34 @@ void PingPalApp::updateLedForState(State state)
         break;
     case State::ERROR_STATE:
         led.setColor(LedColor::RED);
+        break;
     default:
         break;
     }
 }
+
+void PingPalApp::onStateEntered(State newState)
+{
+    updateLedForState(newState);
+    switch (newState)
+    {
+    case State::BOOT:
+        break;
+    case State::SETUP_MODE:
+        break;
+    case State::CONNECTING_WIFI:
+        break;
+    case State::ONLINE_PINGING:
+        break;
+    case State::ONLINE_PING_OK:
+        break;
+    case State::ONLINE_PING_FAIL:
+        break;
+    case State::ERROR_STATE:
+        break;
+    default:
+        break;
+    }
+}
+void PingPalApp::startWiFiConnection() {}
+void PingPalApp::startPing() {}
