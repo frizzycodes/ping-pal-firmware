@@ -5,6 +5,7 @@ enum class State : uint8_t
     BOOT,
     SETUP_MODE,
     CONNECTING_WIFI,
+    ONLINE_PINGING,
     ONLINE_PING_OK,
     ONLINE_PING_FAIL,
     WIFI_DISCONNECTED,

@@ -30,6 +30,8 @@ void StateMachine::update()
         break;
     case State::CONNECTING_WIFI:
         break;
+    case State::ONLINE_PINGING:
+        break;
     case State::ONLINE_PING_OK:
         break;
     case State::ONLINE_PING_FAIL:
@@ -37,6 +39,8 @@ void StateMachine::update()
     case State::WIFI_DISCONNECTED:
         break;
     case State::ERROR_STATE:
+        break;
+    default:
         break;
     }
 }

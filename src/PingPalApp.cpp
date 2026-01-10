@@ -1,8 +1,10 @@
 #include "hardware/Button.h"
+#include "PingPalApp.h"
 #include <stdio.h>
 
 PingPalApp::PingPalApp()
-    : button(5),// BUTTON_PIN {}
+    : button(5),       // BUTTON_PIN {}
+      led(23, 19, 18), // LED_PIN {}
       setupConfirmationPending(false)
 {
 }
@@ -10,16 +12,20 @@ PingPalApp::PingPalApp()
 void PingPalApp::setup()
 {
     button.begin();
+    led.begin();
+    updateLedForState(stateMachine.getCurrentState());
     printf("\n PingPal Starting...");
 }
 
 void PingPalApp::loop()
-{   
+{
     ButtonEvent e = button.update();
-    if(e == ButtonEvent::SHORT_PRESS){
+    if (e == ButtonEvent::SHORT_PRESS)
+    {
         onButtonShortPress();
     }
-    if(e == ButtonEvent::LONG_PRESS){
+    if (e == ButtonEvent::LONG_PRESS)
+    {
         onButtonLongPress();
     }
     stateMachine.update();
@@ -38,6 +44,7 @@ void PingPalApp::onButtonLongPress()
     {
         setupConfirmationPending = false;
         stateMachine.transitionTo(State::SETUP_MODE);
+        updateLedForState(stateMachine.getCurrentState());
         return;
     }
     setupConfirmationPending = true;
@@ -52,12 +59,44 @@ void PingPalApp::onButtonShortPress()
     }
 }
 void PingPalApp::onWiFiConnected() {}
-void PingPalApp::onWiFiDisconnected() {}
+void PingPalApp::onWiFiDisconnected()
+{
+}
 void PingPalApp::onPingSuccess()
 {
     stateMachine.transitionTo(State::ONLINE_PING_OK);
+    updateLedForState(stateMachine.getCurrentState());
 }
 void PingPalApp::onPingFail()
 {
     stateMachine.transitionTo(State::ONLINE_PING_FAIL);
+    updateLedForState(stateMachine.getCurrentState());
+}
+void PingPalApp::updateLedForState(State state)
+{
+    switch (state)
+    {
+    case State::BOOT:
+        led.setColor(LedColor::BLUE);
+        break;
+    case State::SETUP_MODE:
+        led.setColor(LedColor::YELLOW);
+        break;
+    case State::CONNECTING_WIFI:
+        led.setColor(LedColor::BLUE);
+        break;
+    case State::ONLINE_PINGING:
+        led.setColor(LedColor::BLUE);
+        break;
+    case State::ONLINE_PING_OK:
+        led.setColor(LedColor::GREEN);
+        break;
+    case State::ONLINE_PING_FAIL:
+        led.setColor(LedColor::RED);
+        break;
+    case State::ERROR_STATE:
+        led.setColor(LedColor::RED);
+    default:
+        break;
+    }
 }

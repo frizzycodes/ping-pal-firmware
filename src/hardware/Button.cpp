@@ -9,7 +9,7 @@ bool buttonState = HIGH;
 bool lastButtonState = HIGH;
 
 Button::Button(uint8_t pin)
-    : ping(ping),
+    : pin(pin),
       buttonState(HIGH),
       lastButtonState(false),
       pressedTime(0),
@@ -17,7 +17,6 @@ Button::Button(uint8_t pin)
       isPressing(false),
       longPressFired(false)
 {
-
 }
 
 void Button::begin()
@@ -25,7 +24,8 @@ void Button::begin()
     pinMode(pin, INPUT_PULLUP);
 }
 
-ButtonEvent Button::update(){
+ButtonEvent Button::update()
+{
     ButtonEvent event = ButtonEvent::NONE;
 
     bool reading = digitalRead(pin);
@@ -36,7 +36,7 @@ ButtonEvent Button::update(){
         lastDebounceTime = millis();
     }
 
-    if ((millis() - lastDebounceTime) > DEBOUNCE_DELAY)
+    if ((millis() - lastDebounceTime) > DEBOUNCE_DELAY_MS)
     {
         buttonState = reading;
     }
@@ -52,10 +52,10 @@ ButtonEvent Button::update(){
     // -------- LONG PRESS --------
     if (isPressing && !longPressFired)
     {
-        if (millis() - pressedTime >= LONG_PRESS_THRESHOLD)
+        if (millis() - pressedTime >= LONG_PRESS_MS)
         {
             longPressFired = true;
-           // Serial.println("Long Press!");
+            // Serial.println("Long Press!");
             return ButtonEvent::LONG_PRESS;
         }
     }
@@ -65,7 +65,7 @@ ButtonEvent Button::update(){
     {
         if (isPressing && !longPressFired)
         {
-            //Serial.println("Short Press!");
+            // Serial.println("Short Press!");
             return ButtonEvent::SHORT_PRESS;
         }
 
