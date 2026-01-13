@@ -1,5 +1,6 @@
 #pragma once
 #include "StateMachine.h"
+#include "PingService.h"
 #include "hardware/Button.h"
 #include "hardware/Led.h"
 
@@ -8,6 +9,7 @@ class PingPalApp
 private:
     StateMachine stateMachine;
     Button button;
+    PingService pingService;
     Led led;
     bool setupConfirmationPending;
 
@@ -15,7 +17,9 @@ private:
     void updateLedForState(State state);
     void onStateEntered(State newState);
     void startWiFiConnection();
-    void startPing();
+
+    unsigned long resultDisplayStartTime;
+    static constexpr unsigned long RESULT_DISPLAY_MS = 500;
 
 public:
     PingPalApp();

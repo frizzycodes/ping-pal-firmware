@@ -73,4 +73,6 @@ ButtonEvent Button::update()
     }
 
     lastButtonState = buttonState;
+
+    return ButtonEvent::NONE;
 }
