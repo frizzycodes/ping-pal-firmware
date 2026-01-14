@@ -55,6 +55,11 @@ void Led::setColor(LedColor color, LedPattern pattern)
         digitalWrite(gPin, HIGH);
         digitalWrite(bPin, LOW);
         break;
+    case LedColor::PURPLE:
+        digitalWrite(rPin, HIGH);
+        digitalWrite(gPin, LOW);
+        digitalWrite(bPin, HIGH);
+        break;
 
     case LedColor::OFF:
     default:

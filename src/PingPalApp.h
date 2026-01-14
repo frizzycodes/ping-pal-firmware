@@ -3,6 +3,7 @@
 #include "PingService.h"
 #include "hardware/Button.h"
 #include "hardware/Led.h"
+#include "hardware/OledDisplay.h"
 #include <WebServer.h>
 #include <Preferences.h>
 
@@ -13,6 +14,7 @@ private:
     Button button;
     PingService pingService;
     Led led;
+    OledDisplay oled;
     WebServer setupServer;
     Preferences preferences;
     bool setupConfirmationPending;

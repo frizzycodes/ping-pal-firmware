@@ -7,7 +7,8 @@ enum class LedColor : uint8_t
     RED,
     BLUE,
     GREEN,
-    YELLOW
+    YELLOW,
+    PURPLE
 };
 
 enum class LedPattern : uint8_t

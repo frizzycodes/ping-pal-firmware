@@ -18,6 +18,7 @@ void PingPalApp::setup()
 {
     button.begin();
     led.begin();
+    oled.begin();
     onStateEntered(stateMachine.getCurrentState());
 
     printf("\n PingPal Starting...");
@@ -62,6 +63,17 @@ void PingPalApp::loop()
     {
         setupServer.handleClient();
     }
+
+    if (state == State::BOOT)
+    {
+        oled.updateBoot();
+
+        if (oled.isBootDone())
+        {
+            stateMachine.transitionTo(State::CONNECTING_WIFI);
+            onStateEntered(State::CONNECTING_WIFI);
+        }
+    }
 }
 
 // Button events
@@ -86,6 +98,7 @@ void PingPalApp::onButtonLongPress()
         return;
     }
     setupConfirmationPending = true;
+    oled.drawSetupConfirmation();
 }
 void PingPalApp::onButtonShortPress()
 {
@@ -142,7 +155,7 @@ void PingPalApp::updateLedForState(State state)
         led.set(LedColor::RED, LedPattern::BLINK_SLOW);
         break;
     case State::ONLINE_PINGING:
-        led.set(LedColor::BLUE, LedPattern::SOLID);
+        led.set(LedColor::PURPLE, LedPattern::SOLID);
         break;
     case State::ONLINE_PING_OK:
         led.set(LedColor::GREEN, LedPattern::SOLID);
@@ -170,12 +183,13 @@ void PingPalApp::onStateEntered(State newState)
     switch (newState)
     {
     case State::BOOT:
-        startWiFiConnection();
+        oled.onBootEnter();
         break;
     case State::SETUP_MODE:
         startSetupAP();
         break;
     case State::CONNECTING_WIFI:
+        startWiFiConnection();
         break;
     case State::WIFI_DISCONNECTED:
         break;
@@ -247,7 +261,7 @@ void PingPalApp::startSetupAP()
     WiFi.softAP(SETUP_AP_SSID, SETUP_AP_PASS);
 
     IPAddress ip = WiFi.softAPIP();
-    // TODO: show ip.toString() on OLED
+    oled.drawSetupMode(ip.toString());
 
     setupServer.on("/", HTTP_GET, [this]
                    { setupServer.send(200, "text/html",
