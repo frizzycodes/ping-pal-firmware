@@ -8,6 +8,7 @@
 PingPalApp::PingPalApp()
     : button(5),       // BUTTON_PIN {}
       led(23, 19, 18), // LED_PIN {}
+      setupServer(80), // PORT
       setupConfirmationPending(false),
       resultDisplayStartTime(0)
 {
@@ -17,7 +18,6 @@ void PingPalApp::setup()
 {
     button.begin();
     led.begin();
-
     onStateEntered(stateMachine.getCurrentState());
 
     printf("\n PingPal Starting...");
@@ -57,6 +57,11 @@ void PingPalApp::loop()
             onStateEntered(stateMachine.getCurrentState());
         }
     }
+
+    if (stateMachine.getCurrentState() == State::SETUP_MODE)
+    {
+        setupServer.handleClient();
+    }
 }
 
 // Button events
@@ -64,9 +69,15 @@ void PingPalApp::onButtonLongPress()
 {
     State s = stateMachine.getCurrentState();
 
-    if (s == State::SETUP_MODE) // Prevent in Setup_Mode
-        return;
+    if (s == State::SETUP_MODE) // Save and Exit from SETUP_MODE
+    {
+        setupConfirmationPending = false;
 
+        // later: save credentials here
+        stateMachine.transitionTo(State::BOOT);
+        onStateEntered(State::BOOT);
+        return;
+    }
     if (setupConfirmationPending)
     {
         setupConfirmationPending = false;
@@ -149,15 +160,20 @@ void PingPalApp::updateLedForState(State state)
 
 void PingPalApp::onStateEntered(State newState)
 {
+
+    updateLedForState(newState);
+
     // Default safety rule
     pingService.disable();
-    updateLedForState(newState);
+    stopSetupAP();
+
     switch (newState)
     {
     case State::BOOT:
         startWiFiConnection();
         break;
     case State::SETUP_MODE:
+        startSetupAP();
         break;
     case State::CONNECTING_WIFI:
         break;
@@ -203,8 +219,70 @@ void PingPalApp::startWiFiConnection()
         wifiEventRegistered = true;
     }
 
-    // TODO: replace with stored credentials later
-    const char *ssid = "YOUR_WIFI";
-    const char *password = "YOUR_PASSWORD";
+    preferences.begin("wifi", true);
+    if (!preferences.isKey("ssid"))
+    {
+        // First boot or wiped device
+        preferences.clear();
+        preferences.putUInt("ver", 1);
+        preferences.end();
+
+        stateMachine.transitionTo(State::SETUP_MODE);
+        return;
+    }
+    String ssid = preferences.getString("ssid");
+    String password = preferences.getString("pass");
+    preferences.end();
     WiFi.begin(ssid, password);
+}
+
+void PingPalApp::startSetupAP()
+{
+    WiFi.disconnect(true);
+    WiFi.mode(WIFI_AP);
+
+    static constexpr const char *SETUP_AP_SSID = "PingPal-Setup";
+    static constexpr const char *SETUP_AP_PASS = "12345678";
+
+    WiFi.softAP(SETUP_AP_SSID, SETUP_AP_PASS);
+
+    IPAddress ip = WiFi.softAPIP();
+    // TODO: show ip.toString() on OLED
+
+    setupServer.on("/", HTTP_GET, [this]
+                   { setupServer.send(200, "text/html",
+                                      "<html>"
+                                      "<body>"
+                                      "<h2>PingPal Setup</h2>"
+                                      "<form method='POST' action='/save'>"
+                                      "SSID:<br><input name='ssid'><br>"
+                                      "Password:<br><input name='pass' type='password'><br><br>"
+                                      "<input type='submit' value='Save'>"
+                                      "</form>"
+                                      "</body>"
+                                      "</html>"); });
+    setupServer.on("/save", HTTP_POST, [this]
+                   {
+                       String ssid = setupServer.arg("ssid");
+                       String pass = setupServer.arg("pass");
+                       preferences.begin("wifi",false);
+                       preferences.putString("ssid", ssid);
+                       preferences.putString("pass", pass);
+                       preferences.end();
+                       setupServer.send(200, "text/plain", "Saved. Rebooting...");
+
+                       delay(1000);
+                       stateMachine.transitionTo(State::BOOT);
+                       onStateEntered(State::BOOT); });
+
+    setupServer.begin();
+}
+void PingPalApp::stopSetupAP()
+{
+    if (WiFi.getMode() == WIFI_AP)
+    {
+        setupServer.stop();
+        WiFi.softAPdisconnect(true);
+        WiFi.mode(WIFI_OFF);
+    }
 }

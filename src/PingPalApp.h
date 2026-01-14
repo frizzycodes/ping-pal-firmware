@@ -3,6 +3,8 @@
 #include "PingService.h"
 #include "hardware/Button.h"
 #include "hardware/Led.h"
+#include <WebServer.h>
+#include <Preferences.h>
 
 class PingPalApp
 {
@@ -11,6 +13,8 @@ private:
     Button button;
     PingService pingService;
     Led led;
+    WebServer setupServer;
+    Preferences preferences;
     bool setupConfirmationPending;
 
     // Actions (initiated by app)
@@ -38,4 +42,8 @@ public:
     // Ping events
     void onPingSuccess();
     void onPingFail();
+
+    // Setup Mode Events
+    void startSetupAP();
+    void stopSetupAP();
 };
