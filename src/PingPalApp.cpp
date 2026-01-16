@@ -93,7 +93,7 @@ void PingPalApp::loop()
         {
             lastWiFiRetryTime = now;
             wifiRetryCount++;
-            if (wifiRetryCount <= WIFI_MAX_RETRIES)
+            if (wifiRetryCount < WIFI_MAX_RETRIES)
             {
                 stateMachine.transitionTo(State::CONNECTING_WIFI);
                 onStateEntered(State::CONNECTING_WIFI);
@@ -140,7 +140,8 @@ void PingPalApp::onWiFiConnected()
 {
     if (stateMachine.getCurrentState() != State::CONNECTING_WIFI)
         return;
-
+    wifiRetryCount = 0;
+    lastWiFiRetryTime = 0;
     stateMachine.transitionTo(State::ONLINE_PINGING);
     onStateEntered(State::ONLINE_PINGING);
 }
@@ -225,9 +226,13 @@ void PingPalApp::onStateEntered(State newState)
     switch (newState)
     {
     case State::BOOT:
+        wifiRetryCount = 0;
+        lastWiFiRetryTime = 0;
         oled.onBootEnter();
         break;
     case State::SETUP_MODE:
+        wifiRetryCount = 0;
+        lastWiFiRetryTime = 0;
         WiFi.disconnect(true);
         startSetupAP();
         break;
@@ -235,7 +240,6 @@ void PingPalApp::onStateEntered(State newState)
         oled.drawSetupConfirmation();
         break;
     case State::CONNECTING_WIFI:
-        wifiRetryCount = 0;
         startWiFiConnection();
         break;
     case State::WIFI_DISCONNECTED:
