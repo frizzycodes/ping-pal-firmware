@@ -17,7 +17,8 @@ private:
     OledDisplay oled;
     WebServer setupServer;
     Preferences preferences;
-    bool setupConfirmationPending;
+    bool setupServerRunning = false;
+    State prevStateBeforeConfirmation;
 
     // Actions (initiated by app)
     void updateLedForState(State state);
@@ -26,6 +27,12 @@ private:
 
     unsigned long resultDisplayStartTime;
     static constexpr unsigned long RESULT_DISPLAY_MS = 500;
+
+    unsigned long lastWiFiRetryTime = 0;
+    uint8_t wifiRetryCount = 0;
+
+    static constexpr unsigned long WIFI_RETRY_INTERVAL_MS = 8000;
+    static constexpr uint8_t WIFI_MAX_RETRIES = 5;
 
 public:
     PingPalApp();
@@ -42,6 +49,7 @@ public:
     void onWiFiDisconnected();
 
     // Ping events
+    void onOnlinePinging();
     void onPingSuccess();
     void onPingFail();
 

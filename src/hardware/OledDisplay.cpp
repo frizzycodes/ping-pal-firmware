@@ -14,7 +14,9 @@ static const unsigned char PROGMEM bootFrame4[] = {0x00, 0x00, 0x00, 0x07, 0xff,
 
 static const unsigned char PROGMEM wifiNotConnected[] = {0x21, 0xf0, 0x00, 0x16, 0x0c, 0x00, 0x08, 0x03, 0x00, 0x25, 0xf0, 0x80, 0x42, 0x0c, 0x40, 0x89, 0x02, 0x20, 0x10, 0xa1, 0x00, 0x23, 0x58, 0x80, 0x04, 0x24, 0x00, 0x08, 0x52, 0x00, 0x01, 0xa8, 0x00, 0x02, 0x04, 0x00, 0x00, 0x42, 0x00, 0x00, 0xa1, 0x00, 0x00, 0x40, 0x80, 0x00, 0x00, 0x00};
 
-static const unsigned char PROGMEM image_network_www_bits[] = {0x00, 0x0f, 0xf0, 0x00, 0x00, 0x0f, 0xf0, 0x00, 0x00, 0xf3, 0xcf, 0x00, 0x00, 0xf3, 0xcf, 0x00, 0x0f, 0x0c, 0x30, 0xf0, 0x0f, 0x0c, 0x30, 0xf0, 0x0c, 0x30, 0x0c, 0x30, 0x0c, 0x30, 0x0c, 0x30, 0x30, 0x30, 0x0c, 0x0c, 0x30, 0x30, 0x0c, 0x0c, 0x3f, 0xff, 0xff, 0xfc, 0x3f, 0xff, 0xff, 0xfc, 0xc0, 0xc0, 0x03, 0x03, 0xc0, 0xc0, 0x03, 0x03, 0xc0, 0xc0, 0x03, 0x03, 0xc0, 0xc0, 0x03, 0x03, 0xc0, 0xc0, 0x03, 0x03, 0xc0, 0xc0, 0x03, 0x03, 0xc0, 0xc0, 0x03, 0x03, 0xc0, 0xc0, 0x03, 0x03, 0x3f, 0xff, 0xff, 0xfc, 0x3f, 0xff, 0xff, 0xfc, 0x30, 0x30, 0x0c, 0x0c, 0x30, 0x30, 0x0c, 0x0c, 0x0c, 0x30, 0x0c, 0x30, 0x0c, 0x30, 0x0c, 0x30, 0x0f, 0x0c, 0x30, 0xf0, 0x0f, 0x0c, 0x30, 0xf0, 0x00, 0xf3, 0xcf, 0x00, 0x00, 0xf3, 0xcf, 0x00, 0x00, 0x0f, 0xf0, 0x00, 0x00, 0x0f, 0xf0, 0x00};
+static const unsigned char PROGMEM wifiConnected[] = {0x01, 0xf0, 0x00, 0x06, 0x0c, 0x00, 0x18, 0x03, 0x00, 0x21, 0xf0, 0x80, 0x46, 0x0c, 0x40, 0x88, 0x02, 0x20, 0x10, 0xe1, 0x00, 0x23, 0x18, 0x80, 0x04, 0x04, 0x00, 0x08, 0x42, 0x00, 0x01, 0xb0, 0x00, 0x02, 0x08, 0x00, 0x00, 0x40, 0x00, 0x00, 0xa0, 0x00, 0x00, 0x40, 0x00, 0x00, 0x00, 0x00};
+
+static const unsigned char PROGMEM errorSignal[] = {0x00, 0xff, 0xfc, 0x00, 0x00, 0xff, 0xfc, 0x00, 0x03, 0x00, 0x03, 0x00, 0x03, 0x00, 0x03, 0x00, 0x0c, 0x00, 0x00, 0xc0, 0x0c, 0x00, 0x00, 0xc0, 0x30, 0x00, 0x00, 0x30, 0x30, 0x00, 0x00, 0x30, 0xc0, 0xc0, 0x0c, 0x0c, 0xc0, 0xc0, 0x0c, 0x0c, 0xc0, 0x30, 0x30, 0x0c, 0xc0, 0x30, 0x30, 0x0c, 0xc0, 0x0c, 0xc0, 0x0c, 0xc0, 0x0c, 0xc0, 0x0c, 0xc0, 0x03, 0x00, 0x0c, 0xc0, 0x03, 0x00, 0x0c, 0xc0, 0x0c, 0xc0, 0x0c, 0xc0, 0x0c, 0xc0, 0x0c, 0xc0, 0x30, 0x30, 0x0c, 0xc0, 0x30, 0x30, 0x0c, 0xc0, 0xc0, 0x0c, 0x0c, 0xc0, 0xc0, 0x0c, 0x0c, 0x30, 0x00, 0x00, 0x30, 0x30, 0x00, 0x00, 0x30, 0x0c, 0x00, 0x00, 0xc0, 0x0c, 0x00, 0x00, 0xc0, 0x03, 0x00, 0x03, 0x00, 0x03, 0x00, 0x03, 0x00, 0x00, 0xff, 0xfc, 0x00, 0x00, 0xff, 0xfc, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
 static Adafruit_SSD1306 display(128, 64, &Wire);
 
@@ -26,52 +28,80 @@ OledDisplay::OledDisplay()
 {
 }
 
+/* =====================
+   INIT
+   ===================== */
 void OledDisplay::begin()
 {
     Wire.begin(21, 22);
     display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
-    display.clearDisplay();
-    display.setTextSize(1);
-    display.setTextColor(WHITE);
-    display.display();
+    clear();
 }
 
 void OledDisplay::clear()
 {
     display.clearDisplay();
+    display.setTextSize(1);
+    display.setTextColor(WHITE);
+    display.setTextWrap(false);
     display.display();
 }
+
+/* =====================
+   BOOT
+   ===================== */
 void OledDisplay::onBootEnter()
 {
     bootFrameIndex = 0;
     bootAnimationDone = false;
     lastBootFrameTime = millis();
     bootStartTime = millis();
-
     drawBootFrame(0);
 }
+
+void OledDisplay::updateBoot()
+{
+    if (bootAnimationDone)
+        return;
+
+    unsigned long now = millis();
+    if (now - lastBootFrameTime >= BOOT_FRAME_INTERVAL_MS)
+    {
+        lastBootFrameTime = now;
+        bootFrameIndex++;
+
+        if (bootFrameIndex < BOOT_FRAME_COUNT)
+            drawBootFrame(bootFrameIndex);
+        else
+            bootAnimationDone = true;
+    }
+}
+
+bool OledDisplay::isBootDone() const
+{
+    return bootAnimationDone &&
+           (millis() - bootStartTime >= BOOT_MIN_TIME_MS);
+}
+
 void OledDisplay::drawBootFrame(uint8_t frame)
 {
     display.clearDisplay();
+    display.setTextSize(1);
 
     switch (frame)
     {
     case 0:
         display.drawBitmap(52, 20, bootFrame1, 24, 24, 1);
         break;
-
     case 1:
         display.drawBitmap(52, 20, bootFrame2, 24, 24, 1);
         break;
-
     case 2:
         display.drawBitmap(52, 20, bootFrame3, 24, 24, 1);
         break;
-
     case 3:
         display.drawBitmap(52, 20, bootFrame4, 24, 24, 1);
         break;
-
     case 4:
         display.setCursor(37, 28);
         display.print("BOOTING...");
@@ -80,96 +110,188 @@ void OledDisplay::drawBootFrame(uint8_t frame)
 
     display.display();
 }
-void OledDisplay::updateBoot()
-{
-    if (bootAnimationDone)
-        return;
 
-    unsigned long now = millis();
-
-    if (now - lastBootFrameTime >= BOOT_FRAME_INTERVAL_MS)
-    {
-        lastBootFrameTime = now;
-        bootFrameIndex++;
-
-        if (bootFrameIndex < BOOT_FRAME_COUNT)
-        {
-            drawBootFrame(bootFrameIndex);
-        }
-        else
-        {
-            bootAnimationDone = true;
-        }
-    }
-}
-bool OledDisplay::isBootDone() const
-{
-    return bootAnimationDone &&
-           (millis() - bootStartTime >= BOOT_MIN_TIME_MS);
-}
+/* =====================
+   SETUP CONFIRM
+   ===================== */
 void OledDisplay::drawSetupConfirmation()
 {
+    display.clearDisplay();
+    display.setTextSize(1);
+
     display.drawBitmap(109, 1, wifiNotConnected, 19, 16, 1);
 
+    display.setTextSize(2);
+    display.setCursor(0, 7);
+    display.print("Enter");
+
+    display.setCursor(0, 24);
+    display.print("SetupMode?");
+
     display.setTextSize(1);
-    display.setTextColor(WHITE);
-    display.setTextWrap(false);
-
-    // ---- Centered title ----
-    const char *title = "Enter Setup Mode?";
-    int titleWidth = strlen(title) * 6;
-    int titleX = (128 - titleWidth) / 2;
-
-    display.setCursor(titleX, 26);
-    display.print(title);
-
-    // ---- Centered option 1 ----
-    const char *opt1 = "LONG PRESS = Yes";
-    int opt1Width = strlen(opt1) * 6;
-    int opt1X = (128 - opt1Width) / 2;
-
-    display.setCursor(opt1X, 38);
-    display.print(opt1);
-
-    // ---- Centered option 2 ----
-    const char *opt2 = "SHORT PRESS = No";
-    int opt2Width = strlen(opt2) * 6;
-    int opt2X = (128 - opt2Width) / 2;
-
-    display.setCursor(opt2X, 48);
-    display.print(opt2);
+    display.setCursor(0, 48);
+    display.print("LONG = Yes SHORT = No");
 
     display.display();
 }
+
+/* =====================
+   SETUP MODE
+   ===================== */
 void OledDisplay::drawSetupMode(const String &ip)
 {
     display.clearDisplay();
-    display.setTextColor(WHITE);
-    display.setTextWrap(false);
+    display.setTextSize(2);
 
-    // ---- Title ----
-    const char *title = "SETUP MODE";
-    int titleX = (128 - strlen(title) * 6) / 2;
-    display.setCursor(titleX, 0);
-    display.print(title);
+    display.setCursor(5, 2);
+    display.print("SETUP MODE");
 
-    // ---- Network Icon ----
-    int iconX = (128 - 48) / 2;
-    display.drawBitmap(iconX, 14, image_network_www_bits, 48, 48, 1);
+    display.setTextSize(1);
+    display.setCursor(20, 30);
+    display.print("Open in browser");
 
-    // ---- Instruction ----
-    const char *hint = "Open in browser:";
-    int hintX = (128 - strlen(hint) * 6) / 2;
-    display.setCursor(hintX, 40);
-    display.print(hint);
-
-    // ---- IP Address (emphasis) ----
-    int ipX = (128 - ip.length() * 6) / 2;
-    display.setCursor(ipX, 52);
+    display.setCursor(32, 45);
     display.print(ip);
 
     display.display();
 }
-void OledDisplay::drawError()
+
+/* =====================
+   WIFI DISCONNECTED
+   ===================== */
+void OledDisplay::drawWiFiDisconnected()
 {
+    updateDots();
+    display.clearDisplay();
+    display.setTextSize(2);
+
+    display.drawBitmap(109, 1, wifiNotConnected, 19, 16, 1);
+
+    display.setCursor(10, 10);
+    display.print("WiFi");
+    display.setTextSize(1);
+    display.setCursor(10, 28);
+    display.print("DISCONNECTED");
+    display.setCursor(10, 42);
+    display.print("Retrying");
+    drawDots(60, 42);
+    display.display();
+}
+
+/* =====================
+   ONLINE PINGING
+   ===================== */
+void OledDisplay::drawOnlinePinging(
+    const String &ssid,
+    const String &host)
+{
+    display.clearDisplay();
+    display.setTextSize(1);
+    String displaySsid = ssid.substring(0, 9) + "...";
+    display.drawBitmap(109, 1, wifiConnected, 19, 16, 1);
+
+    display.setCursor(0, 14);
+    display.print("WiFi:");
+    display.setCursor(36, 14);
+    display.print(displaySsid);
+
+    display.setCursor(0, 30);
+    display.print("Host: ");
+    display.print(host);
+
+    display.setCursor(34, 46);
+    display.print("Pinging...");
+    display.display();
+}
+
+/* =====================
+   PING SUCCESS
+   ===================== */
+void OledDisplay::drawPingSuccess(
+    const String &ssid,
+    const String &host)
+{
+    display.clearDisplay();
+    display.setTextSize(1);
+    String displaySsid = ssid.substring(0, 9) + "...";
+
+    display.drawBitmap(109, 1, wifiConnected, 19, 16, 1);
+
+    display.setCursor(0, 14);
+    display.print("WiFi:");
+    display.setCursor(36, 14);
+    display.print(displaySsid);
+
+    display.setCursor(0, 30);
+    display.print("Host: ");
+    display.print(host);
+
+    display.setTextSize(2);
+    display.setCursor(22, 46);
+    display.print("SUCCESS");
+
+    display.display();
+}
+
+/* =====================
+   PING FAIL
+   ===================== */
+void OledDisplay::drawPingFail(
+    const String &ssid,
+    const String &host)
+{
+    String displaySsid = ssid.substring(0, 9) + "...";
+    display.clearDisplay();
+    display.setTextSize(1);
+
+    display.drawBitmap(109, 1, wifiConnected, 19, 16, 1);
+
+    display.setCursor(0, 14);
+    display.print("WiFi:");
+    display.setCursor(36, 14);
+    display.print(displaySsid);
+
+    display.setCursor(0, 30);
+    display.print("Host:");
+    display.print(host);
+
+    display.setTextSize(2);
+    display.setCursor(18, 46);
+    display.print("FAILED");
+
+    display.display();
+}
+
+void OledDisplay::updateDots()
+{
+    unsigned long now = millis();
+
+    if (now - lastDotTime >= DOT_INTERVAL_MS)
+    {
+        lastDotTime = now;
+
+        if (dotCount < MAX_DOTS)
+            dotCount++;
+        else
+            dotCount = 0;
+    }
+}
+void OledDisplay::drawDots(int x, int y)
+{
+    display.setCursor(x, y);
+
+    for (uint8_t i = 0; i < dotCount; i++)
+        display.print(".");
+}
+
+void OledDisplay::onError()
+{
+    display.drawBitmap(12, 16, errorSignal, 30, 32, 1);
+    display.setTextColor(1);
+    display.setTextSize(2);
+    display.setTextWrap(false);
+    display.setCursor(50, 25);
+    display.print("ERROR");
+
+    display.display();
 }

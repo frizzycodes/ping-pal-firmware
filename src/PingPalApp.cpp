@@ -9,7 +9,6 @@ PingPalApp::PingPalApp()
     : button(5),       // BUTTON_PIN {}
       led(23, 19, 18), // LED_PIN {}
       setupServer(80), // PORT
-      setupConfirmationPending(false),
       resultDisplayStartTime(0)
 {
 }
@@ -20,6 +19,7 @@ void PingPalApp::setup()
     led.begin();
     oled.begin();
     onStateEntered(stateMachine.getCurrentState());
+    Serial.begin(115200);
 
     printf("\n PingPal Starting...");
 }
@@ -59,7 +59,7 @@ void PingPalApp::loop()
         }
     }
 
-    if (stateMachine.getCurrentState() == State::SETUP_MODE)
+    if (setupServerRunning)
     {
         setupServer.handleClient();
     }
@@ -70,8 +70,39 @@ void PingPalApp::loop()
 
         if (oled.isBootDone())
         {
-            stateMachine.transitionTo(State::CONNECTING_WIFI);
-            onStateEntered(State::CONNECTING_WIFI);
+            preferences.begin("wifi", true);
+            bool hasCreds = preferences.isKey("ssid");
+            preferences.end();
+
+            if (hasCreds)
+            {
+                stateMachine.transitionTo(State::CONNECTING_WIFI);
+                onStateEntered(State::CONNECTING_WIFI);
+            }
+            else
+            {
+                stateMachine.transitionTo(State::SETUP_MODE);
+                onStateEntered(State::SETUP_MODE);
+            }
+        }
+    }
+    if (state == State::WIFI_DISCONNECTED)
+    {
+        unsigned long now = millis();
+        if (now - lastWiFiRetryTime >= WIFI_RETRY_INTERVAL_MS)
+        {
+            lastWiFiRetryTime = now;
+            wifiRetryCount++;
+            if (wifiRetryCount <= WIFI_MAX_RETRIES)
+            {
+                stateMachine.transitionTo(State::CONNECTING_WIFI);
+                onStateEntered(State::CONNECTING_WIFI);
+            }
+            else
+            {
+                stateMachine.transitionTo(State::SETUP_CONFIRMATION);
+                onStateEntered(State::SETUP_CONFIRMATION);
+            }
         }
     }
 }
@@ -81,43 +112,46 @@ void PingPalApp::onButtonLongPress()
 {
     State s = stateMachine.getCurrentState();
 
-    if (s == State::SETUP_MODE) // Save and Exit from SETUP_MODE
-    {
-        setupConfirmationPending = false;
+    if (s == State::SETUP_MODE)
+        return;
 
-        // later: save credentials here
-        stateMachine.transitionTo(State::BOOT);
-        onStateEntered(State::BOOT);
-        return;
-    }
-    if (setupConfirmationPending)
+    if (s == State::SETUP_CONFIRMATION)
     {
-        setupConfirmationPending = false;
         stateMachine.transitionTo(State::SETUP_MODE);
-        onStateEntered(stateMachine.getCurrentState());
+        onStateEntered(State::SETUP_MODE);
         return;
     }
-    setupConfirmationPending = true;
-    oled.drawSetupConfirmation();
+    prevStateBeforeConfirmation = s;
+    stateMachine.transitionTo(State::SETUP_CONFIRMATION);
+    onStateEntered(State::SETUP_CONFIRMATION);
 }
+
 void PingPalApp::onButtonShortPress()
 {
-    if (setupConfirmationPending)
+    if (stateMachine.getCurrentState() == State::SETUP_CONFIRMATION)
     {
-        setupConfirmationPending = false;
-        // OLED later: "Cancelled"
-        return;
+        stateMachine.transitionTo(prevStateBeforeConfirmation);
+        onStateEntered(prevStateBeforeConfirmation);
     }
 }
 
 // Wi-Fi events
 void PingPalApp::onWiFiConnected()
 {
+    if (stateMachine.getCurrentState() != State::CONNECTING_WIFI)
+        return;
+
     stateMachine.transitionTo(State::ONLINE_PINGING);
     onStateEntered(State::ONLINE_PINGING);
 }
+
 void PingPalApp::onWiFiDisconnected()
 {
+    State s = stateMachine.getCurrentState();
+
+    if (s == State::SETUP_MODE || s == State::SETUP_CONFIRMATION)
+        return;
+
     stateMachine.transitionTo(State::WIFI_DISCONNECTED);
     onStateEntered(State::WIFI_DISCONNECTED);
 }
@@ -126,12 +160,20 @@ void PingPalApp::onWiFiDisconnected()
 void PingPalApp::onPingSuccess()
 {
     resultDisplayStartTime = millis();
+    String ssid = WiFi.SSID();
+    String host = pingService.getTarget();
+
+    oled.drawPingSuccess(ssid, host);
     stateMachine.transitionTo(State::ONLINE_PING_OK);
     onStateEntered(stateMachine.getCurrentState());
 }
 void PingPalApp::onPingFail()
 {
     resultDisplayStartTime = millis();
+    String ssid = WiFi.SSID();
+    String host = pingService.getTarget();
+
+    oled.drawPingFail(ssid, host);
     stateMachine.transitionTo(State::ONLINE_PING_FAIL);
     onStateEntered(stateMachine.getCurrentState());
 }
@@ -186,21 +228,29 @@ void PingPalApp::onStateEntered(State newState)
         oled.onBootEnter();
         break;
     case State::SETUP_MODE:
+        WiFi.disconnect(true);
         startSetupAP();
         break;
+    case State::SETUP_CONFIRMATION:
+        oled.drawSetupConfirmation();
+        break;
     case State::CONNECTING_WIFI:
+        wifiRetryCount = 0;
         startWiFiConnection();
         break;
     case State::WIFI_DISCONNECTED:
+        lastWiFiRetryTime = millis();
+        oled.drawWiFiDisconnected();
         break;
     case State::ONLINE_PINGING:
-        pingService.enable();
+        onOnlinePinging();
         break;
     case State::ONLINE_PING_OK:
         break;
     case State::ONLINE_PING_FAIL:
         break;
     case State::ERROR_STATE:
+        oled.onError();
         break;
     default:
         break;
@@ -218,15 +268,17 @@ void PingPalApp::startWiFiConnection()
             switch (event)
             {
             case ARDUINO_EVENT_WIFI_STA_CONNECTED:
-                stateMachine.transitionTo(State::CONNECTING_WIFI);
-                onStateEntered(State::CONNECTING_WIFI);
+                // optional: OLED update like "Connected, waiting for IP"
                 break;
             case ARDUINO_EVENT_WIFI_STA_GOT_IP:
                 onWiFiConnected();
                 break;
             case ARDUINO_EVENT_WIFI_STA_DISCONNECTED:
+                if (stateMachine.getCurrentState() != State::CONNECTING_WIFI &&
+                    stateMachine.getCurrentState() != State::ONLINE_PINGING)
+                    return;
                 onWiFiDisconnected();
-                break;    
+                break; 
             default:
                 break;
             } });
@@ -262,19 +314,43 @@ void PingPalApp::startSetupAP()
 
     IPAddress ip = WiFi.softAPIP();
     oled.drawSetupMode(ip.toString());
+    static String scannedSSIDs[20];
+    static int scannedCount = 0;
+    WiFi.scanDelete(); // clears previous scan results
+    int n = WiFi.scanNetworks();
+    for (int i = 0; i < n && i < 20; i++)
+    {
+        String ssid = WiFi.SSID(i);
 
-    setupServer.on("/", HTTP_GET, [this]
-                   { setupServer.send(200, "text/html",
-                                      "<html>"
-                                      "<body>"
-                                      "<h2>PingPal Setup</h2>"
-                                      "<form method='POST' action='/save'>"
-                                      "SSID:<br><input name='ssid'><br>"
-                                      "Password:<br><input name='pass' type='password'><br><br>"
-                                      "<input type='submit' value='Save'>"
-                                      "</form>"
-                                      "</body>"
-                                      "</html>"); });
+        if (ssid.length() > 0)
+        {
+            scannedSSIDs[scannedCount] = ssid;
+            scannedCount++;
+        }
+    }
+    String html = "<html><body>";
+    html += "<h2>PingPal Setup</h2>";
+
+    html += "<form method='POST' action='/save'>";
+    html += "WiFi Network:<br>";
+    html += "<select name='ssid'>";
+
+    for (auto &ssid : scannedSSIDs)
+    {
+        html += "<option value='" + ssid + "'>" + ssid + "</option>";
+    }
+
+    html += "</select><br><br>";
+
+    html += "Password:<br>";
+    html += "<input name='pass' type='password'><br><br>";
+
+    html += "<input type='submit' value='Save'>";
+    html += "</form>";
+    html += "</body></html>";
+
+    setupServer.on("/", HTTP_GET, [this, html]
+                   { setupServer.send(200, "text/html", html); });
     setupServer.on("/save", HTTP_POST, [this]
                    {
                        String ssid = setupServer.arg("ssid");
@@ -290,13 +366,24 @@ void PingPalApp::startSetupAP()
                        onStateEntered(State::BOOT); });
 
     setupServer.begin();
+    setupServerRunning = true;
 }
 void PingPalApp::stopSetupAP()
 {
     if (WiFi.getMode() == WIFI_AP)
     {
         setupServer.stop();
+        setupServerRunning = false;
         WiFi.softAPdisconnect(true);
         WiFi.mode(WIFI_OFF);
     }
+}
+void PingPalApp::onOnlinePinging()
+{
+    pingService.enable();
+
+    String ssid = WiFi.SSID();
+    String host = pingService.getTarget();
+
+    oled.drawOnlinePinging(ssid, host);
 }

@@ -1,17 +1,14 @@
 #include "Button.h"
 #include <Arduino.h>
 
-// Internal Button Specific tuning (private to this file)
 static constexpr unsigned long LONG_PRESS_MS = 600;
 static constexpr unsigned long DEBOUNCE_DELAY_MS = 60;
 
-bool buttonState = HIGH;
-bool lastButtonState = HIGH;
-
 Button::Button(uint8_t pin)
     : pin(pin),
-      buttonState(HIGH),
-      lastButtonState(false),
+      stableState(HIGH),
+      lastStableState(HIGH),
+      lastRawState(HIGH),
       pressedTime(0),
       lastDebounceTime(0),
       isPressing(false),
@@ -28,51 +25,46 @@ ButtonEvent Button::update()
 {
     ButtonEvent event = ButtonEvent::NONE;
 
-    bool reading = digitalRead(pin);
+    bool rawReading = digitalRead(pin);
 
-    // Debounce (eboth edges)
-    if (reading != lastButtonState)
+    // ---- DEBOUNCE ----
+    if (rawReading != lastRawState)
     {
         lastDebounceTime = millis();
+        lastRawState = rawReading;
     }
 
-    if ((millis() - lastDebounceTime) > DEBOUNCE_DELAY_MS)
+    if (millis() - lastDebounceTime > DEBOUNCE_DELAY_MS)
     {
-        buttonState = reading;
+        stableState = rawReading;
     }
 
-    // -------- PRESS DETECT --------
-    if (lastButtonState == HIGH && buttonState == LOW)
+    // ---- PRESS START ----
+    if (lastStableState == HIGH && stableState == LOW)
     {
         pressedTime = millis();
         isPressing = true;
         longPressFired = false;
     }
 
-    // -------- LONG PRESS --------
-    if (isPressing && !longPressFired)
+    // ---- LONG PRESS ----
+    if (isPressing && !longPressFired &&
+        millis() - pressedTime >= LONG_PRESS_MS)
     {
-        if (millis() - pressedTime >= LONG_PRESS_MS)
-        {
-            longPressFired = true;
-            // Serial.println("Long Press!");
-            return ButtonEvent::LONG_PRESS;
-        }
+        longPressFired = true;
+        event = ButtonEvent::LONG_PRESS;
     }
 
-    // -------- RELEASE DETECT --------
-    if (lastButtonState == LOW && buttonState == HIGH)
+    // ---- RELEASE → SHORT PRESS ----
+    if (lastStableState == LOW && stableState == HIGH)
     {
         if (isPressing && !longPressFired)
         {
-            // Serial.println("Short Press!");
-            return ButtonEvent::SHORT_PRESS;
+            event = ButtonEvent::SHORT_PRESS;
         }
-
         isPressing = false;
     }
 
-    lastButtonState = buttonState;
-
-    return ButtonEvent::NONE;
+    lastStableState = stableState;
+    return event;
 }

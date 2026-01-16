@@ -19,8 +19,9 @@ public:
 private:
     uint8_t pin;
 
-    bool buttonState;
-    bool lastButtonState;
+    bool stableState;
+    bool lastStableState;
+    bool lastRawState;
 
     unsigned long pressedTime;
     unsigned long lastDebounceTime;

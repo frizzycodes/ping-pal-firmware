@@ -5,7 +5,7 @@
 
 PingService::PingService()
     : targetHost("8.8.8.8"),
-      intervalMs(500),
+      intervalMs(3000),
       lastPingTime(0),
       enabled(false)
 {
@@ -23,6 +23,10 @@ void PingService::disable()
 void PingService::setTarget(const char *host)
 {
     targetHost = host;
+}
+const char *PingService::getTarget() const
+{
+    return targetHost;
 }
 void PingService::setInterval(unsigned long ms)
 {

@@ -23,6 +23,7 @@ public:
     void disable();
 
     void setTarget(const char *host);
+    const char *getTarget() const;
     void setInterval(unsigned long ms);
 
     PingStatus update();
