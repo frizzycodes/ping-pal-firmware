@@ -392,10 +392,8 @@ void PingPalApp::startSetupAP()
                        preferences.putString("pass", pass);
                        preferences.end();
                        setupServer.send(200, "text/plain", "Saved. Rebooting...");
-
-                       delay(1000);
-                       stateMachine.transitionTo(State::BOOT);
-                       onStateEntered(State::BOOT); });
+                       stateMachine.transitionTo(State::CONNECTING_WIFI);
+                       onStateEntered(State::CONNECTING_WIFI); });
 
     setupServer.begin();
     setupServerRunning = true;
