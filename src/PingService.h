@@ -7,6 +7,11 @@ enum class PingStatus : uint8_t
     SUCCESS,
     FAIL
 };
+enum class PingInternalState
+{
+    IDLE,
+    IN_PROGRESS
+};
 
 class PingService
 {
@@ -16,6 +21,8 @@ private:
     unsigned long lastPingTime;
     unsigned long lastPingLatency;
     bool enabled;
+    PingInternalState state = PingInternalState::IDLE;
+    unsigned long pingStartTime = 0;
 
 public:
     PingService();

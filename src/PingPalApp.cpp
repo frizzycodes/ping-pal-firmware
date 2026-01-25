@@ -4,6 +4,7 @@
 #include <WiFi.h>
 #include <WiFiGeneric.h>
 #include <stdio.h>
+#include "esp_task_wdt.h"
 
 PingPalApp::PingPalApp()
     : button(5),
@@ -20,6 +21,8 @@ void PingPalApp::setup()
     button.begin();
     led.begin();
     oled.begin();
+    esp_task_wdt_init(15, true);
+    esp_task_wdt_add(NULL);
     onStateEntered(stateMachine.getCurrentState());
     Serial.begin(115200);
 
@@ -28,6 +31,7 @@ void PingPalApp::setup()
 
 void PingPalApp::loop()
 {
+    esp_task_wdt_reset();
     ButtonEvent e = button.update();
     State state = stateMachine.getCurrentState();
     PingStatus pingResult = pingService.update();
@@ -62,26 +66,41 @@ void PingPalApp::loop()
         onStateEntered(State::WIFI_DISCONNECTED);
         return;
     }
-
     if (state == State::ONLINE_PING_OK || state == State::ONLINE_PING_FAIL)
     {
+        // 1. Stall guard
+        unsigned long sinceLastPing =
+            millis() - pingService.getLastPingTime();
+
+        if (sinceLastPing > pingService.getInterval() * 2)
+        {
+            pingService.disable();
+            pingService.enable();
+            lastResultTime = millis();
+        }
+
+        // 2. UI update
         if (millis() - lastUiUpdate >= UI_REFRESH_MS)
         {
             lastUiUpdate = millis();
 
             unsigned long checkTime =
-                (millis() - lastResultTime + 1000) / 1000;
+                (millis() - lastResultTime) / 1000;
+
+            if (checkTime > pingService.getInterval() / 1000)
+                checkTime = pingService.getInterval() / 1000;
 
             if (state == State::ONLINE_PING_OK)
                 oled.drawPingSuccess(
-                    WiFi.SSID(),
+                    cachedSSID,
                     pingService.getLastPingLatency(),
                     checkTime);
             else
                 oled.drawPingFail(
-                    WiFi.SSID(),
+                    cachedSSID,
                     checkTime);
         }
+
         return;
     }
 
@@ -170,6 +189,7 @@ void PingPalApp::onWiFiConnected()
 {
     if (stateMachine.getCurrentState() != State::CONNECTING_WIFI)
         return;
+    cachedSSID = WiFi.SSID();
     wifiRetryCount = 0;
     lastWiFiRetryTime = 0;
     stateMachine.transitionTo(State::ONLINE_PINGING);
@@ -410,8 +430,7 @@ void PingPalApp::stopSetupAP()
 }
 void PingPalApp::onOnlinePinging()
 {
-    String ssid = WiFi.SSID();
     String host = pingService.getTarget();
-    oled.drawOnlinePinging(ssid, host);
+    oled.drawOnlinePinging(cachedSSID, host);
     pingService.enable();
 }

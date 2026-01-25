@@ -61,23 +61,26 @@ PingStatus PingService::update()
     if (!enabled)
         return PingStatus::NONE;
 
-    if (lastPingTime == 0 || millis() - lastPingTime >= intervalMs)
+    unsigned long now = millis();
+
+    // Not time yet → do nothing
+    if (now - lastPingTime < intervalMs)
+        return PingStatus::NONE;
+
+    // Mark ping attempt time *before* blocking call
+    lastPingTime = now;
+
+    // Blocking ICMP ping (library limitation)
+    bool success = Ping.ping(targetHost, 4);
+
+    if (success)
     {
-        bool ret = Ping.ping(targetHost, 4);
-
-        lastPingTime = millis(); // timestamp AFTER ping finishes
-
-        if (ret)
-        {
-            lastPingLatency = Ping.averageTime();
-            return PingStatus::SUCCESS;
-        }
-        else
-        {
-            lastPingLatency = 0;
-            return PingStatus::FAIL;
-        }
+        lastPingLatency = Ping.averageTime();
+        return PingStatus::SUCCESS;
     }
-
-    return PingStatus::NONE;
+    else
+    {
+        lastPingLatency = 0;
+        return PingStatus::FAIL;
+    }
 }

@@ -19,6 +19,7 @@ private:
     Preferences preferences;
     bool setupServerRunning = false;
     State prevStateBeforeConfirmation;
+    String cachedSSID;
 
     // Actions (initiated by app)
     void updateLedForState(State state);
