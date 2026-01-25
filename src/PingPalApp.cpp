@@ -69,14 +69,15 @@ void PingPalApp::loop()
     if (state == State::ONLINE_PING_OK || state == State::ONLINE_PING_FAIL)
     {
         // 1. Stall guard
-        unsigned long sinceLastPing =
-            millis() - pingService.getLastPingTime();
+        unsigned long sinceLastResult =
+            millis() - lastResultTime;
 
-        if (sinceLastPing > pingService.getInterval() * 2)
+        if (sinceLastResult > pingService.getInterval() * 2)
         {
             pingService.disable();
             pingService.enable();
-            lastResultTime = millis();
+
+            lastResultTime = millis(); // reset UI
         }
 
         // 2. UI update
@@ -84,11 +85,7 @@ void PingPalApp::loop()
         {
             lastUiUpdate = millis();
 
-            unsigned long checkTime =
-                (millis() - lastResultTime) / 1000;
-
-            if (checkTime > pingService.getInterval() / 1000)
-                checkTime = pingService.getInterval() / 1000;
+            unsigned long checkTime = ((millis() - pingService.getLastPingTime()) + 1000) / 1000;
 
             if (state == State::ONLINE_PING_OK)
                 oled.drawPingSuccess(

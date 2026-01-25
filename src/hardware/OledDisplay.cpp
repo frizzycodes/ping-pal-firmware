@@ -216,8 +216,8 @@ void OledDisplay::drawSetupMode(const String &ip)
    ===================== */
 void OledDisplay::drawWiFiDisconnected()
 {
-    display.clearDisplay();
     updateDots();
+    display.clearDisplay();
     display.setTextColor(1);
     display.setTextWrap(false);
     display.setFont(&FreeSerif9pt7b);
