@@ -14,6 +14,7 @@ private:
     const char *targetHost;
     unsigned long intervalMs;
     unsigned long lastPingTime;
+    unsigned long lastPingLatency;
     bool enabled;
 
 public:
@@ -21,7 +22,10 @@ public:
 
     void enable();
     void disable();
-
+    bool getStatus();
+    unsigned long getLastPingTime();
+    unsigned long getInterval();
+    unsigned long getLastPingLatency();
     void setTarget(const char *host);
     const char *getTarget() const;
     void setInterval(unsigned long ms);

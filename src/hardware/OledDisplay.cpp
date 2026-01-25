@@ -3,20 +3,9 @@
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
-
-static const unsigned char PROGMEM bootFrame1[] = {0x00, 0x00, 0x00, 0x07, 0xff, 0xf0, 0x04, 0x00, 0x10, 0x03, 0xff, 0xe0, 0x01, 0x00, 0x40, 0x01, 0x55, 0x40, 0x01, 0x2a, 0x40, 0x01, 0x14, 0x40, 0x00, 0x88, 0x80, 0x00, 0x41, 0x00, 0x00, 0x2a, 0x00, 0x00, 0x14, 0x00, 0x00, 0x14, 0x00, 0x00, 0x22, 0x00, 0x00, 0x49, 0x00, 0x00, 0x80, 0x80, 0x01, 0x00, 0x40, 0x01, 0x00, 0x40, 0x01, 0x00, 0x40, 0x01, 0x00, 0x40, 0x03, 0xff, 0xe0, 0x04, 0x00, 0x10, 0x07, 0xff, 0xf0, 0x00, 0x00, 0x00};
-
-static const unsigned char PROGMEM bootFrame2[] = {0x00, 0x00, 0x00, 0x07, 0xff, 0xf0, 0x04, 0x00, 0x10, 0x03, 0xff, 0xe0, 0x01, 0x00, 0x40, 0x01, 0x7f, 0x40, 0x01, 0x7f, 0x40, 0x01, 0x3e, 0x40, 0x00, 0x9c, 0x80, 0x00, 0x49, 0x00, 0x00, 0x22, 0x00, 0x00, 0x14, 0x00, 0x00, 0x14, 0x00, 0x00, 0x22, 0x00, 0x00, 0x49, 0x00, 0x00, 0x80, 0x80, 0x01, 0x00, 0x40, 0x01, 0x00, 0x40, 0x01, 0x00, 0x40, 0x01, 0x00, 0x40, 0x03, 0xff, 0xe0, 0x04, 0x00, 0x10, 0x07, 0xff, 0xf0, 0x00, 0x00, 0x00};
-
-static const unsigned char PROGMEM bootFrame3[] = {0x00, 0x00, 0x00, 0x07, 0xff, 0xf0, 0x04, 0x00, 0x10, 0x03, 0xff, 0xe0, 0x01, 0x00, 0x40, 0x01, 0x00, 0x40, 0x01, 0x7f, 0x40, 0x01, 0x3e, 0x40, 0x00, 0x9c, 0x80, 0x00, 0x49, 0x00, 0x00, 0x22, 0x00, 0x00, 0x14, 0x00, 0x00, 0x14, 0x00, 0x00, 0x22, 0x00, 0x00, 0x49, 0x00, 0x00, 0x80, 0x80, 0x01, 0x08, 0x40, 0x01, 0x3e, 0x40, 0x01, 0x7f, 0x40, 0x01, 0x00, 0x40, 0x03, 0xff, 0xe0, 0x04, 0x00, 0x10, 0x07, 0xff, 0xf0, 0x00, 0x00, 0x00};
-
-static const unsigned char PROGMEM bootFrame4[] = {0x00, 0x00, 0x00, 0x07, 0xff, 0xf0, 0x04, 0x00, 0x10, 0x03, 0xff, 0xe0, 0x01, 0x00, 0x40, 0x01, 0x00, 0x40, 0x01, 0x00, 0x40, 0x01, 0x3e, 0x40, 0x00, 0x9c, 0x80, 0x00, 0x49, 0x00, 0x00, 0x22, 0x00, 0x00, 0x14, 0x00, 0x00, 0x14, 0x00, 0x00, 0x22, 0x00, 0x00, 0x49, 0x00, 0x00, 0x80, 0x80, 0x01, 0x3e, 0x40, 0x01, 0x7f, 0x40, 0x01, 0x7f, 0x40, 0x01, 0x00, 0x40, 0x03, 0xff, 0xe0, 0x04, 0x00, 0x10, 0x07, 0xff, 0xf0, 0x00, 0x00, 0x00};
-
-static const unsigned char PROGMEM wifiNotConnected[] = {0x21, 0xf0, 0x00, 0x16, 0x0c, 0x00, 0x08, 0x03, 0x00, 0x25, 0xf0, 0x80, 0x42, 0x0c, 0x40, 0x89, 0x02, 0x20, 0x10, 0xa1, 0x00, 0x23, 0x58, 0x80, 0x04, 0x24, 0x00, 0x08, 0x52, 0x00, 0x01, 0xa8, 0x00, 0x02, 0x04, 0x00, 0x00, 0x42, 0x00, 0x00, 0xa1, 0x00, 0x00, 0x40, 0x80, 0x00, 0x00, 0x00};
-
-static const unsigned char PROGMEM wifiConnected[] = {0x01, 0xf0, 0x00, 0x06, 0x0c, 0x00, 0x18, 0x03, 0x00, 0x21, 0xf0, 0x80, 0x46, 0x0c, 0x40, 0x88, 0x02, 0x20, 0x10, 0xe1, 0x00, 0x23, 0x18, 0x80, 0x04, 0x04, 0x00, 0x08, 0x42, 0x00, 0x01, 0xb0, 0x00, 0x02, 0x08, 0x00, 0x00, 0x40, 0x00, 0x00, 0xa0, 0x00, 0x00, 0x40, 0x00, 0x00, 0x00, 0x00};
-
-static const unsigned char PROGMEM errorSignal[] = {0x00, 0xff, 0xfc, 0x00, 0x00, 0xff, 0xfc, 0x00, 0x03, 0x00, 0x03, 0x00, 0x03, 0x00, 0x03, 0x00, 0x0c, 0x00, 0x00, 0xc0, 0x0c, 0x00, 0x00, 0xc0, 0x30, 0x00, 0x00, 0x30, 0x30, 0x00, 0x00, 0x30, 0xc0, 0xc0, 0x0c, 0x0c, 0xc0, 0xc0, 0x0c, 0x0c, 0xc0, 0x30, 0x30, 0x0c, 0xc0, 0x30, 0x30, 0x0c, 0xc0, 0x0c, 0xc0, 0x0c, 0xc0, 0x0c, 0xc0, 0x0c, 0xc0, 0x03, 0x00, 0x0c, 0xc0, 0x03, 0x00, 0x0c, 0xc0, 0x0c, 0xc0, 0x0c, 0xc0, 0x0c, 0xc0, 0x0c, 0xc0, 0x30, 0x30, 0x0c, 0xc0, 0x30, 0x30, 0x0c, 0xc0, 0xc0, 0x0c, 0x0c, 0xc0, 0xc0, 0x0c, 0x0c, 0x30, 0x00, 0x00, 0x30, 0x30, 0x00, 0x00, 0x30, 0x0c, 0x00, 0x00, 0xc0, 0x0c, 0x00, 0x00, 0xc0, 0x03, 0x00, 0x03, 0x00, 0x03, 0x00, 0x03, 0x00, 0x00, 0xff, 0xfc, 0x00, 0x00, 0xff, 0xfc, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+#include "./fonts/FreeSerif9pt7b.h"
+#include "./fonts/FreeSerifBold9pt7b.h"
+#include "./hardware/OledAssets.h"
 
 static Adafruit_SSD1306 display(128, 64, &Wire);
 
@@ -103,10 +92,39 @@ void OledDisplay::drawBootFrame(uint8_t frame)
         display.drawBitmap(52, 20, bootFrame4, 24, 24, 1);
         break;
     case 4:
-        display.setCursor(37, 28);
-        display.print("BOOTING...");
+        const char *startMsg = "Starting PINGPAL";
+        int startMsgWidth = strlen(startMsg) * 6;
+        int startMsgX = (128 - startMsgWidth) / 2;
+        display.setCursor(startMsgX, 28);
+        display.print(startMsg);
         break;
     }
+
+    display.display();
+}
+
+void OledDisplay::drawWiFiConnecting()
+{
+    display.clearDisplay();
+    display.setTextColor(1);
+    display.setTextWrap(false);
+    display.setFont(&FreeSerif9pt7b);
+    display.setCursor(23, 27);
+    display.print("Connecting");
+
+    display.setCursor(58, 44);
+    display.print("Wifi");
+
+    display.drawLine(1, 0, 127, 0, 1);
+
+    // download
+    display.drawBitmap(36, 32, image_wifi_1, 17, 16, 1);
+
+    display.drawLine(0, 0, 0, 63, 1);
+
+    display.drawLine(127, 0, 127, 63, 1);
+
+    display.drawLine(1, 63, 127, 63, 1);
 
     display.display();
 }
@@ -117,20 +135,41 @@ void OledDisplay::drawBootFrame(uint8_t frame)
 void OledDisplay::drawSetupConfirmation()
 {
     display.clearDisplay();
-    display.setTextSize(1);
-
-    display.drawBitmap(109, 1, wifiNotConnected, 19, 16, 1);
-
-    display.setTextSize(2);
-    display.setCursor(0, 7);
+    display.setTextColor(1);
+    display.setTextWrap(false);
+    display.setFont(&FreeSerifBold9pt7b);
+    display.setCursor(47, 16);
     display.print("Enter");
 
-    display.setCursor(0, 24);
-    display.print("SetupMode?");
+    display.setCursor(13, 30);
+    display.print("Setup Mode?");
 
-    display.setTextSize(1);
-    display.setCursor(0, 48);
-    display.print("LONG = Yes SHORT = No");
+    display.drawLine(1, 0, 127, 0, 1);
+
+    display.setFont();
+    display.setCursor(11, 38);
+    display.print("Long Press");
+
+    display.drawLine(0, 0, 0, 63, 1);
+
+    display.setCursor(11, 49);
+    display.print("Short Press");
+
+    display.drawLine(127, 0, 127, 63, 1);
+
+    display.drawBitmap(85, 40, image_menu_cursor, 3, 5, 1);
+
+    display.drawLine(1, 63, 127, 63, 1);
+
+    display.drawBitmap(85, 51, image_menu_cursor, 3, 5, 1);
+
+    display.setCursor(99, 38);
+    display.print("YES");
+
+    display.setCursor(104, 49);
+    display.print("NO");
+
+    display.drawBitmap(30, 4, image_info, 15, 16, 1);
 
     display.display();
 }
@@ -141,17 +180,33 @@ void OledDisplay::drawSetupConfirmation()
 void OledDisplay::drawSetupMode(const String &ip)
 {
     display.clearDisplay();
-    display.setTextSize(2);
-
-    display.setCursor(5, 2);
+    display.setTextColor(1);
+    display.setTextWrap(false);
+    display.setFont(&FreeSerif9pt7b);
+    display.setCursor(8, 19);
     display.print("SETUP MODE");
 
-    display.setTextSize(1);
-    display.setCursor(20, 30);
-    display.print("Open in browser");
+    display.setFont();
+    display.setCursor(20, 25);
+    display.print("Open in Browser");
 
-    display.setCursor(32, 45);
+    display.setFont(&FreeSerifBold9pt7b);
+    display.setCursor(34, 53);
     display.print(ip);
+
+    display.drawLine(1, 0, 127, 0, 1);
+
+    display.drawLine(127, 0, 127, 63, 1);
+
+    display.drawLine(0, 0, 0, 63, 1);
+
+    display.drawLine(1, 63, 127, 63, 1);
+
+    display.drawBitmap(28, 46, image_menu_cursor, 3, 5, 1);
+
+    display.drawBitmap(8, 40, image_earth_bits, 15, 16, 1);
+
+    display.display();
 
     display.display();
 }
@@ -161,20 +216,34 @@ void OledDisplay::drawSetupMode(const String &ip)
    ===================== */
 void OledDisplay::drawWiFiDisconnected()
 {
-    updateDots();
     display.clearDisplay();
-    display.setTextSize(2);
+    updateDots();
+    display.setTextColor(1);
+    display.setTextWrap(false);
+    display.setFont(&FreeSerif9pt7b);
+    display.setCursor(15, 34);
+    display.print("Disconnected");
 
-    display.drawBitmap(109, 1, wifiNotConnected, 19, 16, 1);
+    display.setCursor(54, 22);
+    display.print("Wifi");
 
-    display.setCursor(10, 10);
-    display.print("WiFi");
-    display.setTextSize(1);
-    display.setCursor(10, 28);
-    display.print("DISCONNECTED");
-    display.setCursor(10, 42);
+    display.drawLine(1, 0, 127, 0, 1);
+
+    display.drawBitmap(35, 9, image_wifi_1, 17, 16, 1);
+
+    display.drawLine(0, 0, 0, 63, 1);
+
+    display.setFont();
+    display.setCursor(32, 40);
     display.print("Retrying");
-    drawDots(60, 42);
+
+    display.drawLine(127, 0, 127, 63, 1);
+
+    display.drawLine(1, 63, 127, 63, 1);
+
+    display.display();
+
+    drawDots(80, 40);
     display.display();
 }
 
@@ -186,21 +255,28 @@ void OledDisplay::drawOnlinePinging(
     const String &host)
 {
     display.clearDisplay();
-    display.setTextSize(1);
-    String displaySsid = ssid.substring(0, 9) + "...";
-    display.drawBitmap(109, 1, wifiConnected, 19, 16, 1);
+    display.setTextColor(1);
+    display.setTextWrap(false);
+    display.setFont(&FreeSerif9pt7b);
+    display.setCursor(30, 17);
+    display.print("Pinging...");
 
-    display.setCursor(0, 14);
-    display.print("WiFi:");
-    display.setCursor(36, 14);
-    display.print(displaySsid);
+    display.drawLine(1, 0, 127, 0, 1);
 
-    display.setCursor(0, 30);
-    display.print("Host: ");
+    display.drawBitmap(42, 37, image_menu_cursor, 3, 5, 1);
+
+    display.drawLine(0, 0, 0, 63, 1);
+
+    display.setFont(&FreeSerifBold9pt7b);
+    display.setCursor(51, 44);
     display.print(host);
 
-    display.setCursor(34, 46);
-    display.print("Pinging...");
+    display.drawLine(127, 0, 127, 63, 1);
+
+    display.drawLine(1, 63, 127, 63, 1);
+
+    display.drawBitmap(21, 31, image_wifi_3, 15, 16, 1);
+
     display.display();
 }
 
@@ -209,26 +285,54 @@ void OledDisplay::drawOnlinePinging(
    ===================== */
 void OledDisplay::drawPingSuccess(
     const String &ssid,
-    const String &host)
+    const unsigned int &latency,
+    const unsigned int &checkTime)
 {
     display.clearDisplay();
-    display.setTextSize(1);
-    String displaySsid = ssid.substring(0, 9) + "...";
-
-    display.drawBitmap(109, 1, wifiConnected, 19, 16, 1);
-
-    display.setCursor(0, 14);
-    display.print("WiFi:");
-    display.setCursor(36, 14);
+    display.setTextColor(1);
+    display.setTextWrap(false);
+    display.setFont(&FreeSerif9pt7b);
+    display.setCursor(32, 17);
+    String displaySsid = ssid.substring(0, 10) + "...";
     display.print(displaySsid);
 
-    display.setCursor(0, 30);
-    display.print("Host: ");
-    display.print(host);
+    display.setCursor(31, 35);
+    display.print("ONLINE");
 
-    display.setTextSize(2);
-    display.setCursor(22, 46);
-    display.print("SUCCESS");
+    display.drawBitmap(4, 4, image_wifi_2, 19, 16, 1);
+
+    display.setFont();
+    display.setCursor(6, 51);
+    display.print("Last Check");
+
+    display.setCursor(6, 40);
+    display.print("Latency");
+
+    display.drawLine(1, 0, 127, 0, 1);
+
+    display.drawLine(0, 0, 0, 63, 1);
+
+    display.drawLine(127, 0, 127, 63, 1);
+
+    display.drawLine(1, 63, 127, 63, 1);
+
+    display.drawBitmap(25, 27, image_menu_cursor, 3, 5, 1);
+
+    display.drawBitmap(25, 10, image_menu_cursor, 3, 5, 1);
+
+    display.drawBitmap(69, 53, image_menu_cursor, 3, 5, 1);
+
+    display.drawBitmap(53, 42, image_menu_cursor, 3, 5, 1);
+
+    display.setCursor(64, 40);
+    display.print(latency);
+    display.print("ms");
+
+    display.setCursor(77, 51);
+    display.print(checkTime);
+    display.print("s ago");
+
+    display.drawBitmap(5, 22, image_range_bar, 15, 16, 1);
 
     display.display();
 }
@@ -238,26 +342,52 @@ void OledDisplay::drawPingSuccess(
    ===================== */
 void OledDisplay::drawPingFail(
     const String &ssid,
-    const String &host)
+    const unsigned int &checkTime)
 {
-    String displaySsid = ssid.substring(0, 9) + "...";
     display.clearDisplay();
-    display.setTextSize(1);
-
-    display.drawBitmap(109, 1, wifiConnected, 19, 16, 1);
-
-    display.setCursor(0, 14);
-    display.print("WiFi:");
-    display.setCursor(36, 14);
+    String displaySsid = ssid.substring(0, 10) + "...";
+    display.setTextColor(1);
+    display.setTextWrap(false);
+    display.setFont(&FreeSerif9pt7b);
+    display.setCursor(32, 17);
     display.print(displaySsid);
 
-    display.setCursor(0, 30);
-    display.print("Host:");
-    display.print(host);
+    display.setCursor(31, 34);
+    display.print("OFFLINE");
 
-    display.setTextSize(2);
-    display.setCursor(18, 46);
-    display.print("FAILED");
+    display.drawBitmap(4, 4, image_wifi_2, 19, 16, 1);
+
+    display.setFont();
+    display.setCursor(6, 51);
+    display.print("Last Check");
+
+    display.setCursor(6, 40);
+    display.print("Latency");
+
+    display.drawLine(1, 0, 127, 0, 1);
+
+    display.drawLine(0, 0, 0, 63, 1);
+
+    display.drawLine(127, 0, 127, 63, 1);
+
+    display.drawLine(1, 63, 127, 63, 1);
+
+    display.drawBitmap(25, 26, image_menu_cursor, 3, 5, 1);
+
+    display.drawBitmap(25, 10, image_menu_cursor, 3, 5, 1);
+
+    display.drawBitmap(69, 53, image_menu_cursor, 3, 5, 1);
+
+    display.drawBitmap(53, 42, image_menu_cursor, 3, 5, 1);
+
+    display.setCursor(60, 40);
+    display.print("No Response");
+
+    display.setCursor(77, 51);
+    display.print(checkTime);
+    display.print("s ago");
+
+    display.drawBitmap(6, 22, image_no_range_bar, 15, 16, 1);
 
     display.display();
 }
@@ -286,6 +416,7 @@ void OledDisplay::drawDots(int x, int y)
 
 void OledDisplay::onError()
 {
+    display.clearDisplay();
     display.drawBitmap(12, 16, errorSignal, 30, 32, 1);
     display.setTextColor(1);
     display.setTextSize(2);

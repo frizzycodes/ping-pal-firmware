@@ -41,10 +41,11 @@ public:
     void drawSetupConfirmation();
     void drawSetupMode(const String &ip);
     void drawWiFiDisconnected();
+    void drawWiFiConnecting();
 
     void drawOnlinePinging(const String &ssid, const String &host);
-    void drawPingSuccess(const String &ssid, const String &host);
-    void drawPingFail(const String &ssid, const String &host);
+    void drawPingSuccess(const String &ssid, const unsigned int &latency, const unsigned int &checkTime);
+    void drawPingFail(const String &ssid, const unsigned int &checkTime);
 
     void onError();
 };

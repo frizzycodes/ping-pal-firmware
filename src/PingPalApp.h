@@ -34,6 +34,11 @@ private:
     static constexpr unsigned long WIFI_RETRY_INTERVAL_MS = 8000;
     static constexpr uint8_t WIFI_MAX_RETRIES = 5;
 
+    unsigned long lastUiUpdate;
+    static constexpr unsigned long UI_REFRESH_MS = 1000;
+
+    unsigned long lastResultTime;
+
 public:
     PingPalApp();
 
@@ -52,6 +57,8 @@ public:
     void onOnlinePinging();
     void onPingSuccess();
     void onPingFail();
+    // void onPingSuccess(unsigned long checkTime);
+    // void onPingFail(unsigned long checkTime);
 
     // Setup Mode Events
     void startSetupAP();

@@ -6,10 +6,12 @@
 #include <stdio.h>
 
 PingPalApp::PingPalApp()
-    : button(5),       // BUTTON_PIN {}
-      led(23, 19, 18), // LED_PIN {}
-      setupServer(80), // PORT
-      resultDisplayStartTime(0)
+    : button(5),
+      led(23, 19, 18),
+      setupServer(80),
+      resultDisplayStartTime(0),
+      lastUiUpdate(0),
+      lastResultTime(0)
 {
 }
 
@@ -35,33 +37,58 @@ void PingPalApp::loop()
     if (e == ButtonEvent::SHORT_PRESS)
     {
         onButtonShortPress();
+        return;
     }
     if (e == ButtonEvent::LONG_PRESS)
     {
         onButtonLongPress();
+        return;
     }
 
     if (pingResult == PingStatus::SUCCESS)
     {
         onPingSuccess();
+        return;
     }
     else if (pingResult == PingStatus::FAIL)
     {
         onPingFail();
+        return;
+    }
+    if ((state == State::ONLINE_PING_OK || state == State::ONLINE_PING_FAIL) &&
+        WiFi.status() != WL_CONNECTED)
+    {
+        stateMachine.transitionTo(State::WIFI_DISCONNECTED);
+        onStateEntered(State::WIFI_DISCONNECTED);
+        return;
     }
 
     if (state == State::ONLINE_PING_OK || state == State::ONLINE_PING_FAIL)
     {
-        if (millis() - resultDisplayStartTime >= RESULT_DISPLAY_MS)
+        if (millis() - lastUiUpdate >= UI_REFRESH_MS)
         {
-            stateMachine.transitionTo(State::ONLINE_PINGING);
-            onStateEntered(stateMachine.getCurrentState());
+            lastUiUpdate = millis();
+
+            unsigned long checkTime =
+                (millis() - lastResultTime + 1000) / 1000;
+
+            if (state == State::ONLINE_PING_OK)
+                oled.drawPingSuccess(
+                    WiFi.SSID(),
+                    pingService.getLastPingLatency(),
+                    checkTime);
+            else
+                oled.drawPingFail(
+                    WiFi.SSID(),
+                    checkTime);
         }
+        return;
     }
 
     if (setupServerRunning)
     {
         setupServer.handleClient();
+        return;
     }
 
     if (state == State::BOOT)
@@ -77,6 +104,7 @@ void PingPalApp::loop()
             if (hasCreds)
             {
                 stateMachine.transitionTo(State::CONNECTING_WIFI);
+                oled.drawWiFiConnecting();
                 onStateEntered(State::CONNECTING_WIFI);
             }
             else
@@ -84,9 +112,10 @@ void PingPalApp::loop()
                 stateMachine.transitionTo(State::SETUP_MODE);
                 onStateEntered(State::SETUP_MODE);
             }
+            return;
         }
     }
-    if (state == State::WIFI_DISCONNECTED)
+    if (state == State::WIFI_DISCONNECTED) // updates wifi disconnected / retrying ui
     {
         unsigned long now = millis();
         if (now - lastWiFiRetryTime >= WIFI_RETRY_INTERVAL_MS)
@@ -103,6 +132,7 @@ void PingPalApp::loop()
                 stateMachine.transitionTo(State::SETUP_CONFIRMATION);
                 onStateEntered(State::SETUP_CONFIRMATION);
             }
+            return;
         }
     }
 }
@@ -160,23 +190,14 @@ void PingPalApp::onWiFiDisconnected()
 // Ping events
 void PingPalApp::onPingSuccess()
 {
-    resultDisplayStartTime = millis();
-    String ssid = WiFi.SSID();
-    String host = pingService.getTarget();
-
-    oled.drawPingSuccess(ssid, host);
     stateMachine.transitionTo(State::ONLINE_PING_OK);
-    onStateEntered(stateMachine.getCurrentState());
+    onStateEntered(State::ONLINE_PING_OK);
 }
+
 void PingPalApp::onPingFail()
 {
-    resultDisplayStartTime = millis();
-    String ssid = WiFi.SSID();
-    String host = pingService.getTarget();
-
-    oled.drawPingFail(ssid, host);
     stateMachine.transitionTo(State::ONLINE_PING_FAIL);
-    onStateEntered(stateMachine.getCurrentState());
+    onStateEntered(State::ONLINE_PING_FAIL);
 }
 
 // Actions (initiated by app)
@@ -220,7 +241,6 @@ void PingPalApp::onStateEntered(State newState)
     updateLedForState(newState);
 
     // Default safety rule
-    pingService.disable();
     stopSetupAP();
 
     switch (newState)
@@ -228,32 +248,40 @@ void PingPalApp::onStateEntered(State newState)
     case State::BOOT:
         wifiRetryCount = 0;
         lastWiFiRetryTime = 0;
+        pingService.disable();
         oled.onBootEnter();
         break;
     case State::SETUP_MODE:
         wifiRetryCount = 0;
         lastWiFiRetryTime = 0;
         WiFi.disconnect(true);
+        pingService.disable();
         startSetupAP();
         break;
     case State::SETUP_CONFIRMATION:
         oled.drawSetupConfirmation();
+        pingService.disable();
         break;
     case State::CONNECTING_WIFI:
+        pingService.disable();
         startWiFiConnection();
         break;
     case State::WIFI_DISCONNECTED:
         lastWiFiRetryTime = millis();
+        pingService.disable();
         oled.drawWiFiDisconnected();
         break;
     case State::ONLINE_PINGING:
         onOnlinePinging();
         break;
     case State::ONLINE_PING_OK:
+        lastResultTime = millis();
         break;
     case State::ONLINE_PING_FAIL:
+        lastResultTime = millis();
         break;
     case State::ERROR_STATE:
+        pingService.enable();
         oled.onError();
         break;
     default:
@@ -384,10 +412,8 @@ void PingPalApp::stopSetupAP()
 }
 void PingPalApp::onOnlinePinging()
 {
-    pingService.enable();
-
     String ssid = WiFi.SSID();
     String host = pingService.getTarget();
-
     oled.drawOnlinePinging(ssid, host);
+    pingService.enable();
 }
