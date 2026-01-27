@@ -34,7 +34,7 @@ void PingPalApp::loop()
     esp_task_wdt_reset();
     ButtonEvent e = button.update();
     State state = stateMachine.getCurrentState();
-    PingStatus pingResult = pingService.update();
+    PingStatus pingResult = pingService.pollResult();
     led.update();
     stateMachine.update();
 
@@ -59,6 +59,7 @@ void PingPalApp::loop()
         onPingFail();
         return;
     }
+
     if ((state == State::ONLINE_PING_OK || state == State::ONLINE_PING_FAIL) &&
         WiFi.status() != WL_CONNECTED)
     {
@@ -85,7 +86,8 @@ void PingPalApp::loop()
         {
             lastUiUpdate = millis();
 
-            unsigned long checkTime = ((millis() - pingService.getLastPingTime()) + 1000) / 1000;
+            unsigned long checkTime =
+                (millis() - lastResultTime) / 1000;
 
             if (state == State::ONLINE_PING_OK)
                 oled.drawPingSuccess(
@@ -203,16 +205,23 @@ void PingPalApp::onWiFiDisconnected()
     stateMachine.transitionTo(State::WIFI_DISCONNECTED);
     onStateEntered(State::WIFI_DISCONNECTED);
 }
-
+void PingPalApp::onOnlinePinging()
+{
+    String host = pingService.getTarget();
+    oled.drawOnlinePinging(cachedSSID, host);
+    pingService.enable();
+}
 // Ping events
 void PingPalApp::onPingSuccess()
 {
+    lastResultTime = millis();
     stateMachine.transitionTo(State::ONLINE_PING_OK);
     onStateEntered(State::ONLINE_PING_OK);
 }
 
 void PingPalApp::onPingFail()
 {
+    lastResultTime = millis();
     stateMachine.transitionTo(State::ONLINE_PING_FAIL);
     onStateEntered(State::ONLINE_PING_FAIL);
 }
@@ -424,10 +433,4 @@ void PingPalApp::stopSetupAP()
         WiFi.softAPdisconnect(true);
         WiFi.mode(WIFI_OFF);
     }
-}
-void PingPalApp::onOnlinePinging()
-{
-    String host = pingService.getTarget();
-    oled.drawOnlinePinging(cachedSSID, host);
-    pingService.enable();
 }

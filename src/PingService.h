@@ -1,5 +1,7 @@
 #pragma once
 #include <stdint.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
 enum class PingStatus : uint8_t
 {
@@ -7,35 +9,35 @@ enum class PingStatus : uint8_t
     SUCCESS,
     FAIL
 };
-enum class PingInternalState
-{
-    IDLE,
-    IN_PROGRESS
-};
 
 class PingService
 {
 private:
     const char *targetHost;
     unsigned long intervalMs;
-    unsigned long lastPingTime;
-    unsigned long lastPingLatency;
+
+    volatile unsigned long lastPingTime;
+    volatile unsigned long lastPingLatency;
+    volatile PingStatus lastStatus;
+
     bool enabled;
-    PingInternalState state = PingInternalState::IDLE;
-    unsigned long pingStartTime = 0;
+
+    TaskHandle_t pingTaskHandle;
+    static void pingTaskThunk(void *param);
+    void pingTaskLoop();
 
 public:
     PingService();
 
     void enable();
     void disable();
-    bool getStatus();
+
+    PingStatus pollResult();
     unsigned long getLastPingTime();
     unsigned long getInterval();
     unsigned long getLastPingLatency();
+
     void setTarget(const char *host);
     const char *getTarget() const;
     void setInterval(unsigned long ms);
-
-    PingStatus update();
 };

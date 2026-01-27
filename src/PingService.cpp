@@ -8,18 +8,45 @@ PingService::PingService()
       intervalMs(10000),
       lastPingTime(0),
       lastPingLatency(0),
-      enabled(false)
+      lastStatus(PingStatus::NONE),
+      enabled(false),
+      pingTaskHandle(nullptr)
 {
 }
 
 void PingService::enable()
 {
+    if (enabled)
+        return;
+
     enabled = true;
+    lastStatus = PingStatus::NONE;
+
+    // ===== CREATE PING TASK ON CORE 0 =====
+    xTaskCreatePinnedToCore(
+        pingTaskThunk,
+        "PingTask",
+        4096,
+        this,
+        1,
+        &pingTaskHandle,
+        0 // Core 0
+    );
 }
 
 void PingService::disable()
 {
     enabled = false;
+
+    if (pingTaskHandle)
+    {
+        vTaskDelete(pingTaskHandle);
+        pingTaskHandle = nullptr;
+    }
+}
+void PingService::pingTaskThunk(void *param)
+{
+    static_cast<PingService *>(param)->pingTaskLoop();
 }
 
 void PingService::setTarget(const char *host)
@@ -27,9 +54,11 @@ void PingService::setTarget(const char *host)
     targetHost = host;
 }
 
-bool PingService::getStatus()
+PingStatus PingService::pollResult()
 {
-    return enabled;
+    PingStatus s = lastStatus;
+    lastStatus = PingStatus::NONE;
+    return s;
 }
 
 unsigned long PingService::getLastPingLatency()
@@ -56,31 +85,34 @@ void PingService::setInterval(unsigned long ms)
     intervalMs = ms;
 }
 
-PingStatus PingService::update()
+void PingService::pingTaskLoop()
 {
-    if (!enabled)
-        return PingStatus::NONE;
-
-    unsigned long now = millis();
-
-    // Not time yet → do nothing
-    if (now - lastPingTime < intervalMs)
-        return PingStatus::NONE;
-
-    // Mark ping attempt time *before* blocking call
-    lastPingTime = now;
-
-    // Blocking ICMP ping (library limitation)
-    bool success = Ping.ping(targetHost, 4);
-
-    if (success)
+    for (;;)
     {
-        lastPingLatency = Ping.averageTime();
-        return PingStatus::SUCCESS;
-    }
-    else
-    {
-        lastPingLatency = 0;
-        return PingStatus::FAIL;
+        if (!enabled)
+            vTaskDelay(pdMS_TO_TICKS(500));
+
+        unsigned long now = millis();
+
+        if (now - lastPingTime >= intervalMs)
+        {
+            lastPingTime = now;
+
+            bool ok = Ping.ping(targetHost, 4);
+
+            if (ok)
+            {
+                lastPingLatency = Ping.averageTime();
+                lastStatus = PingStatus::SUCCESS;
+            }
+            else
+            {
+                lastPingLatency = 0;
+                lastStatus = PingStatus::FAIL;
+            }
+        }
+
+        // Yield to system (VERY IMPORTANT)
+        vTaskDelay(pdMS_TO_TICKS(100));
     }
 }
